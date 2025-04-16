@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from hist_utils import calculate_hist_of_img  # Replace with actual module name
 
 
@@ -27,13 +28,17 @@ def test_rounding_precision_effect():
 
 def test_invalid_input_shape():
     img = np.zeros((2, 2, 3))  # Not 2D
-    with pytest.raises(ValueError, match="Input image must be a 2D grayscale array"):
+    with pytest.raises(
+        ValueError, match="Input image must be a 2D grayscale array"
+    ):
         calculate_hist_of_img(img)
 
 
 def test_pixel_value_range_check():
     img = np.array([[0.0, 1.1]])
-    with pytest.raises(ValueError, match="Pixel values must be between 0 and 1"):
+    with pytest.raises(
+        ValueError, match="Pixel values must be between 0 and 1"
+    ):
         calculate_hist_of_img(img)
 
 
