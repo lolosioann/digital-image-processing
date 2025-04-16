@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 79
+select = ["E", "F", "I"]
+fixable = ["I"]
+src = ["src", "tests"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["src"]
