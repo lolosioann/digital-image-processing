@@ -1,5 +1,6 @@
 from typing import Dict
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -42,3 +43,45 @@ def apply_hist_modification_transform(
     modified_img = transform_func(img_array)
 
     return modified_img
+
+
+def dict_to_hist_array(hist_dict: Dict[float, float]) -> np.ndarray:
+    """
+    Converts a histogram stored as a dictionary into a 256-length numpy array.
+    Missing keys are treated as 0.
+    """
+    hist_arr = np.zeros(256, dtype=np.float64)
+    for k, v in hist_dict.items():
+        hist_arr[int(k * 255)] = v
+    return hist_arr
+
+
+def show_histogram(
+    hist_dict: Dict[int, float], title: str = "Histogram"
+) -> None:
+    # Convert histogram dictionary to array
+    hist_arr = dict_to_hist_array(hist_dict)
+
+    # Normalize the histogram array to sum to 1 (probability density)
+    hist_arr /= np.sum(hist_arr)
+
+    # Create the plot
+    plt.bar(
+        np.arange(256) / 255.0,
+        hist_arr,
+        width=3 / 255.0,
+        color="blue",
+        alpha=0.7,
+    )
+
+    # Set title and axis labels
+    plt.title(title)
+    plt.xlabel("Pixel Value (Normalized)")
+    plt.ylabel("Probability Density")
+
+    # Set the x-axis and y-axis limits to [0, 1]
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+
+    # Show the plot
+    plt.show()

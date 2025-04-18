@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from hist_utils import calculate_hist_of_img  # Replace with actual module name
+from hist_utils import calculate_hist_of_img
 
 
 def test_basic_histogram_counts():
