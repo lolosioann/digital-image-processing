@@ -9,29 +9,36 @@ def perform_hist_modification(
     img_array: np.ndarray, hist_ref: Dict[float, float], mode: str
 ) -> np.ndarray:
     """
-    Modifies the histogram of a grayscale image to match a given target
-        histogram.
+    Modifies the histogram of a grayscale image to match a given
+    target histogram.
 
     Args:
-        img_array (np.ndarray): 2D grayscale float image with values
-            in [0, 1].
-        hist_ref (Dict): Desired histogram as {gray_level: frequency}, keys
-            are floats in [0, 1].
+        img_array (np.ndarray): A 2D float array with grayscale values
+        in [0, 1].
+        hist_ref (Dict[float, float]): Target histogram as
+        {gray_level: frequency},
+        where gray_level ∈ [0, 1].
         mode (str): One of ['greedy', 'non-greedy', 'post-disturbance'].
 
     Returns:
-        np.ndarray: The modified image.
+        np.ndarray: A new 2D array with modified pixel values to
+        match target histogram.
     """
+    # -------------------------------------------------------------------------
+    # Input Validation
+    # -------------------------------------------------------------------------
     if img_array.ndim != 2:
         raise ValueError("Input image must be 2D.")
+
     if not np.issubdtype(img_array.dtype, np.floating):
         raise TypeError("Input image must be of float type.")
-    if not all(0.0 <= v <= 1.0 for v in np.nditer(img_array)):
+
+    if not np.all((0.0 <= img_array) & (img_array <= 1.0)):
         raise ValueError("All image values must be in [0, 1].")
+
     if not isinstance(hist_ref, dict):
         raise TypeError("hist_ref must be a dictionary.")
 
-    # Validate hist_ref keys (they should be floats in the range [0, 1])
     if not all(
         isinstance(k, float) and 0.0 <= k <= 1.0 for k in hist_ref.keys()
     ):
@@ -39,35 +46,41 @@ def perform_hist_modification(
             "Keys in hist_ref must be floats in the range [0, 1]."
         )
 
-    # Convert hist_ref dictionary to array
+    # -------------------------------------------------------------------------
+    # Histogram Processing
+    # -------------------------------------------------------------------------
     hist_ref_arr = dict_to_hist_array(hist_ref)
 
-    # Ensure the histogram reference is non-zero before normalizing
-    hist_sum = np.sum(hist_ref_arr)
-    if hist_sum == 0:
+    if np.sum(hist_ref_arr) == 0:
         raise ValueError(
             "The histogram reference cannot have zero total frequency."
         )
 
-    hist_ref_arr /= hist_sum  # Normalize to form a distribution
+    hist_ref_arr /= np.sum(hist_ref_arr)  # Normalize to sum to 1
     cdf_ref = np.cumsum(hist_ref_arr)
 
-    # Quantize input image into levels 0–255 for indexing
+    # -------------------------------------------------------------------------
+    # Image Quantization & Histogram Calculation
+    # -------------------------------------------------------------------------
+    # Map pixel values to [0, 255] integer levels
     img_levels = np.clip(np.round(img_array * 255), 0, 255).astype(int)
 
-    # Compute histogram of input image
+    # Get image histogram and its CDF
     hist_img_dict = calculate_hist_of_img(img_array, return_normalized=True)
     hist_img_arr = dict_to_hist_array(hist_img_dict)
     cdf_img = np.cumsum(hist_img_arr)
 
+    # -------------------------------------------------------------------------
+    # Histogram Modification Modes
+    # -------------------------------------------------------------------------
     if mode == "greedy":
-        # Compute greedy mapping
-        mapping = np.zeros(256, dtype=np.float32)
+        # For each level in input, find closest level in target CDF
+        mapping = np.zeros(256, dtype=np.uint8)
         for g1 in range(256):
             diff = np.abs(cdf_img[g1] - cdf_ref)
             mapping[g1] = np.argmin(diff)
 
-        # Apply mapping and rescale to [0, 1]
+        # Apply the mapping
         modified_img = mapping[img_levels] / 255.0
         return modified_img.astype(np.float32)
 

@@ -6,13 +6,23 @@ import numpy as np
 
 def calculate_hist_of_img(
     img_array: np.ndarray, return_normalized: bool = False
-) -> Dict:
+) -> Dict[float, float]:
+    """
+    Computes the histogram of a grayscale image with float values in [0, 1].
+
+    Args:
+        img_array (np.ndarray): 2D grayscale image array.
+        return_normalized (bool): If True, returns a probability distribution.
+
+    Returns:
+        Dict[float, float]: Histogram as a mapping from pixel value
+        to frequency.
+    """
     if img_array.ndim != 2:
         raise ValueError("Input image must be a 2D grayscale array")
     if np.any((img_array < 0) | (img_array > 1)):
         raise ValueError("Pixel values must be between 0 and 1")
 
-    # flat = np.round(img_array.flatten(), decimals=4)
     unique_vals, counts = np.unique(img_array.flatten(), return_counts=True)
 
     if return_normalized:
@@ -24,64 +34,90 @@ def calculate_hist_of_img(
 def apply_hist_modification_transform(
     img_array: np.ndarray, modification_transform: Dict[float, float]
 ) -> np.ndarray:
+    """
+    Applies a transformation to an image using a precomputed value mapping.
+
+    Args:
+        img_array (np.ndarray): 2D grayscale image array.
+        modification_transform (Dict[float, float]): Mapping of
+            pixel values to new values.
+
+    Returns:
+        np.ndarray: Transformed image array.
+    """
     if img_array.ndim != 2:
         raise ValueError("Input image must be a 2D grayscale array")
-
     if np.any((img_array < 0) | (img_array > 1)):
         raise ValueError("Pixel values must be between 0 and 1")
 
+    # Ensure all unique values are present in the transform
     unique_vals = np.unique(img_array)
     for val in unique_vals:
-        if val not in modification_transform:
+        if np.round(val, 4) not in modification_transform:
             raise ValueError(
                 f"Level {val} does not exist in the modification transform"
             )
 
+    # Apply transformation using vectorized function
     transform_func = np.vectorize(
         lambda x: modification_transform[np.round(x, 4)], otypes=[np.float64]
     )
-    modified_img = transform_func(img_array)
-
-    return modified_img
+    return transform_func(img_array)
 
 
 def dict_to_hist_array(hist_dict: Dict[float, float]) -> np.ndarray:
     """
-    Converts a histogram stored as a dictionary into a 256-length numpy array.
-    Missing keys are treated as 0.
+    Converts a histogram dictionary into a 256-bin numpy array.
+    Assumes keys are in [0.0, 1.0].
+
+    Args:
+        hist_dict (Dict[float, float]): Histogram as float keys in [0, 1].
+
+    Returns:
+        np.ndarray: Histogram array of length 256.
     """
     hist_arr = np.zeros(256, dtype=np.float64)
     for k, v in hist_dict.items():
-        hist_arr[int(k * 255)] = v
+        bin_index = int(round(k * 255))
+        hist_arr[bin_index] = v
     return hist_arr
 
 
 def show_histogram(
-    hist_dict: Dict[int, float], title: str = "Histogram"
+    hist_dict: Dict[float, float], title: str = "Histogram"
 ) -> None:
-    # Convert histogram dictionary to array
+    """
+    Displays a histogram as a bar plot, normalized to [0, 1] on both axes.
+
+    Args:
+        hist_dict (Dict[float, float]): Histogram data with float
+            keys in [0, 1].
+        title (str): Plot title.
+    """
     hist_arr = dict_to_hist_array(hist_dict)
 
-    # Normalize the histogram array to sum to 1 (probability density)
-    hist_arr /= np.sum(hist_arr)
+    # Normalize to probability density
+    total = hist_arr.sum()
+    if total > 0:
+        hist_arr /= total
+    else:
+        raise ValueError("Cannot plot histogram with zero total frequency")
 
-    # Create the plot
+    # Plot histogram: x-axis in [0, 1], y-axis in [0, 1]
     plt.bar(
-        np.arange(256) / 255.0,
+        np.linspace(0, 1, 256),
         hist_arr,
         width=3 / 255.0,
         color="blue",
         alpha=0.7,
     )
 
-    # Set title and axis labels
+    # Labels and plot formatting
     plt.title(title)
     plt.xlabel("Pixel Value (Normalized)")
     plt.ylabel("Probability Density")
-
-    # Set the x-axis and y-axis limits to [0, 1]
     plt.xlim(0, 1)
     plt.ylim(0, 1)
-
-    # Show the plot
+    plt.grid(True, linestyle="--", alpha=0.3)
+    plt.tight_layout()
     plt.show()
