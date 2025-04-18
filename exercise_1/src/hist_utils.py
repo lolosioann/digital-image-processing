@@ -107,7 +107,7 @@ def show_histogram(
     plt.bar(
         np.linspace(0, 1, 256),
         hist_arr,
-        width=3 / 255.0,
+        width=1 / 255.0,
         color="blue",
         alpha=0.7,
     )
@@ -117,7 +117,6 @@ def show_histogram(
     plt.xlabel("Pixel Value (Normalized)")
     plt.ylabel("Probability Density")
     plt.xlim(0, 1)
-    plt.ylim(0, 1)
     plt.grid(True, linestyle="--", alpha=0.3)
     plt.tight_layout()
     plt.show()
