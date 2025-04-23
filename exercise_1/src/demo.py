@@ -2,7 +2,10 @@ import numpy as np
 from PIL import Image
 
 from hist_modif import perform_hist_modification
-from hist_utils import *
+from hist_utils import (
+    calculate_hist_of_img,
+    show_histogram,
+)
 
 input_img_path = "/home/johnlolos/Coding/dip/exercise_1/src/input_img.jpg"
 ref_img_path = "/home/johnlolos/Coding/dip/exercise_1/src/ref_img.jpg"
@@ -18,8 +21,8 @@ show_histogram(input_hist, "Input Image Histogram")
 show_histogram(ref_hist, "Reference Image Histogram")
 
 
-out = perform_hist_modification(input_img, ref_hist, mode="post-disturbance")
-out_hist = calculate_hist_of_img(out, return_normalized=True)
+out = perform_hist_modification(input_img, ref_hist, mode="greedy")
+out_hist = calculate_hist_of_img(out, return_normalized=False)
 show_histogram(out_hist, "Output Image Histogram")
 out = (out * 255).astype(np.uint8)
 out = Image.fromarray(out)

@@ -1,12 +1,10 @@
 from typing import Dict
 
 import numpy as np
-from PIL import Image
 
 from hist_utils import (
     calculate_hist_of_img,
     dict_to_hist_array,
-    show_histogram,
 )
 
 
@@ -54,20 +52,20 @@ def perform_hist_modification(
             "The histogram reference cannot have zero total frequency."
         )
 
-    hist_ref_arr /= np.sum(hist_ref_arr)
+    # if mode == "post-disturbance":
+    #     d = 1.0 / 64
+    #     noise = np.random.uniform(-d / 2, d / 2, size=img_array.shape)
+    #     print(noise)
+
+    #     img_array = np.clip(img_array + noise, 0.0, 1.0)
+    #     show_histogram(
+    #         calculate_hist_of_img(img_array, return_normalized=True),
+    #         "Disturbed Image Histogram",
+    #     )
+    #     mode = "greedy"
+
+    # hist_ref_arr /= np.sum(hist_ref_arr)
     cdf_ref = np.cumsum(hist_ref_arr)
-
-    if mode == "post-disturbance":
-        d = 1.0 / 64
-        noise = np.random.uniform(-d / 2, d / 2, size=img_array.shape)
-        print(noise)
-
-        img_array = np.clip(img_array + noise, 0.0, 1.0)
-        show_histogram(
-            calculate_hist_of_img(img_array, return_normalized=True),
-            "Disturbed Image Histogram",
-        )
-        mode = "greedy"
 
     img_levels = np.clip(np.round(img_array * 255), 0, 255).astype(int)
 
@@ -126,9 +124,12 @@ def perform_hist_modification(
     #     noise = np.random.uniform(-d / 2, d / 2, size=img_array.shape)
     #     disturbed_img = np.clip(img_array + noise, 0.0, 1.0)
 
-    #     disturbed_levels = np.clip(np.round(disturbed_img * 255), 0, 255).astype(np.uint8)
+    #     disturbed_levels = np.clip
+    # (np.round(disturbed_img * 255), 0, 255).astype(np.uint8)
 
-    #     hist_img_dict = calculate_hist_of_img(disturbed_img, return_normalized=True)
+    #     hist_img_dict = calculate_hist_of_img(
+    # disturbed_img, return_normalized=True
+    # )
     #     hist_img_arr = dict_to_hist_array(hist_img_dict)
     #     cdf_img = np.cumsum(hist_img_arr)
 

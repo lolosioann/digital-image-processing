@@ -53,7 +53,8 @@ def apply_hist_modification_transform(
     # Ensure all unique values are present in the transform
     unique_vals = np.unique(img_array)
     for val in unique_vals:
-        if np.round(val, 4) not in modification_transform:
+        # if np.round(val, 4) not in modification_transform:
+        if val not in modification_transform:
             raise ValueError(
                 f"Level {val} does not exist in the modification transform"
             )
@@ -63,6 +64,10 @@ def apply_hist_modification_transform(
         lambda x: modification_transform[np.round(x, 4)], otypes=[np.float64]
     )
     return transform_func(img_array)
+
+
+# The following functions are made for my own convenience
+# and are not part of the original exercise.
 
 
 def dict_to_hist_array(hist_dict: Dict[float, float]) -> np.ndarray:
