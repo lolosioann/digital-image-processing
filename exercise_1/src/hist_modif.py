@@ -3,8 +3,8 @@ from typing import Dict
 import numpy as np
 
 from hist_utils import (
+    apply_hist_modification_transform,
     calculate_hist_of_img,
-    dict_to_hist_array,
 )
 
 
@@ -13,133 +13,144 @@ def perform_hist_modification(
 ) -> np.ndarray:
     """
     Modifies the histogram of a grayscale image to match a given
-    target histogram.
-
-    Args:
-        img_array (np.ndarray): A 2D float array with grayscale values
-        in [0, 1].
-        hist_ref (Dict[float, float]): Target histogram as
-        {gray_level: frequency},
-        where gray_level ∈ [0, 1].
-        mode (str): One of ['greedy', 'non-greedy', 'post-disturbance'].
-
-    Returns:
-        np.ndarray: A new 2D array with modified pixel values to
-        match target histogram.
+    target histogram using the specified mode.
+    Supported modes: 'greedy', 'non-greedy', 'post-disturbance'.
     """
     if img_array.ndim != 2:
         raise ValueError("Input image must be 2D.")
-
     if not np.issubdtype(img_array.dtype, np.floating):
         raise TypeError("Input image must be of float type.")
-
     if not np.all((0.0 <= img_array) & (img_array <= 1.0)):
         raise ValueError("All image values must be in [0, 1].")
-
     if not isinstance(hist_ref, dict):
         raise TypeError("hist_ref must be a dictionary.")
-
     if not all(
         isinstance(k, float) and 0.0 <= k <= 1.0 for k in hist_ref.keys()
     ):
         raise ValueError(
             "Keys in hist_ref must be floats in the range [0, 1]."
         )
-
-    hist_ref_arr = dict_to_hist_array(hist_ref)
-    if np.sum(hist_ref_arr) == 0:
-        raise ValueError(
-            "The histogram reference cannot have zero total frequency."
+    if mode not in ["greedy", "non-greedy", "post-disturbance"]:
+        raise NotImplementedError(
+            "Supported modes: 'greedy', 'non-greedy', 'post-disturbance'."
         )
 
-    # if mode == "post-disturbance":
-    #     d = 1.0 / 64
-    #     noise = np.random.uniform(-d / 2, d / 2, size=img_array.shape)
-    #     print(noise)
+    # --- POST DISTURBANCE ---
+    if mode == "post-disturbance":
+        unique_vals = np.unique(img_array)
+        if len(unique_vals) < 2:
+            raise ValueError(
+                "Image must contain at least 2 unique gray levels "
+                "for post-disturbance."
+            )
 
-    #     img_array = np.clip(img_array + noise, 0.0, 1.0)
-    #     show_histogram(
-    #         calculate_hist_of_img(img_array, return_normalized=True),
-    #         "Disturbed Image Histogram",
-    #     )
-    #     mode = "greedy"
+        unique_vals.sort()
+        delta = unique_vals[1] - unique_vals[0]  # assume uniform quantization
 
-    # hist_ref_arr /= np.sum(hist_ref_arr)
-    cdf_ref = np.cumsum(hist_ref_arr)
+        noise = np.random.uniform(-delta / 2, delta / 2, size=img_array.shape)
+        img_array = img_array + noise
+        img_array = np.clip(img_array, 0.0, 1.0)
+        mode = "greedy"  # apply greedy after noise addition
 
-    img_levels = np.clip(np.round(img_array * 255), 0, 255).astype(int)
+    # Histogram calculation
+    input_hist = calculate_hist_of_img(img_array, return_normalized=False)
+    N = sum(input_hist.values())
 
-    hist_img_dict = calculate_hist_of_img(img_array, return_normalized=True)
-    hist_img_arr = dict_to_hist_array(hist_img_dict)
-    cdf_img = np.cumsum(hist_img_arr)
+    sorted_input_levels = sorted(input_hist.keys())
+    sorted_output_levels = sorted(hist_ref.keys())
+    desired_counts = {g: int(round(freq * N)) for g, freq in hist_ref.items()}
+    modification_transform = {}
 
     if mode == "greedy":
-        # mapping = np.zeros(256, dtype=np.uint8)
-        mapping = np.zeros(len(cdf_img), dtype=np.uint8)
-        # for g1 in range(256):
-        for g1 in range(len(cdf_img)):
-            diff = np.abs(cdf_img[g1] - cdf_ref)
-            mapping[g1] = np.argmin(diff)
-            # mapping.append(np.argmin(diff))
+        input_samples = []
+        for val in sorted_input_levels:
+            input_samples.extend([val] * input_hist[val])
+        input_samples.sort()
 
-        print(img_levels)
-        modified_img = mapping[img_levels] / 255.0
-        return modified_img.astype(np.float32)
+        output_samples = []
+        for g in sorted_output_levels:
+            output_samples.extend([g] * desired_counts[g])
+
+        len_diff = len(input_samples) - len(output_samples)
+        if len_diff > 0:
+            output_samples.extend([sorted_output_levels[-1]] * len_diff)
+        elif len_diff < 0:
+            output_samples = output_samples[: len(input_samples)]
+
+        for i_val, o_val in zip(input_samples, output_samples):
+            if i_val not in modification_transform:
+                modification_transform[i_val] = o_val
 
     elif mode == "non-greedy":
-        total_pixels = img_array.size
-        ideal_bin_count = total_pixels / 256
-        counts = np.round(hist_img_arr * total_pixels).astype(int)
+        input_pointer = 0
+        input_levels = sorted_input_levels
+        assigned = set()
+        num_levels = len(input_levels)
 
-        mapping = np.full(256, -1, dtype=int)
-        assigned = np.zeros(256, dtype=int)
+        for g in sorted_output_levels:
+            target_count = desired_counts[g]
+            current_count = 0
 
-        input_levels = np.argsort(cdf_img)
-        output_levels = np.argsort(cdf_ref)
+            while input_pointer < num_levels:
+                f = input_levels[input_pointer]
+                count_f = input_hist[f]
+                deficiency = target_count - current_count
 
-        i = 0  # index for input levels
-        for j in range(256):  # output level
-            current_sum = 0
-            while i < 256 and (
-                current_sum + counts[input_levels[i]] <= ideal_bin_count
-                or abs(ideal_bin_count - current_sum)
-                < counts[input_levels[i]] / 2
-            ):
-                mapping[input_levels[i]] = output_levels[j]
-                current_sum += counts[input_levels[i]]
-                assigned[output_levels[j]] += counts[input_levels[i]]
-                i += 1
+                if deficiency < count_f / 2:
+                    break
 
-        # For any remaining input levels
-        for k in range(256):
-            if mapping[k] == -1:
-                mapping[k] = output_levels[np.argmin(assigned)]
-                assigned[mapping[k]] += counts[k]
+                modification_transform[f] = g
+                current_count += count_f
+                assigned.add(f)
+                input_pointer += 1
 
-        modified_img = mapping[img_levels] / 255.0
-        return modified_img.astype(np.float32)
+        for f in sorted_input_levels:
+            if f not in modification_transform:
+                nearest_g = min(sorted_output_levels, key=lambda g: abs(g - f))
+                modification_transform[f] = nearest_g
 
-    # elif mode == "post-disturbance":
-    #     d = 1.0 / 255
-    #     noise = np.random.uniform(-d / 2, d / 2, size=img_array.shape)
-    #     disturbed_img = np.clip(img_array + noise, 0.0, 1.0)
+    print(
+        "Number of unique output levels used:",
+        len(set(modification_transform.values())),
+    )
+    return apply_hist_modification_transform(img_array, modification_transform)
 
-    #     disturbed_levels = np.clip
-    # (np.round(disturbed_img * 255), 0, 255).astype(np.uint8)
 
-    #     hist_img_dict = calculate_hist_of_img(
-    # disturbed_img, return_normalized=True
-    # )
-    #     hist_img_arr = dict_to_hist_array(hist_img_dict)
-    #     cdf_img = np.cumsum(hist_img_arr)
+def perform_hist_eq(img_array: np.ndarray, mode: str) -> np.ndarray:
+    """
+    Perform histogram equalization on a grayscale image using actual gray
+    levels.
 
-    #     mapping = np.zeros(256, dtype=np.uint8)
-    #     for g1 in range(256):
-    #         diff = np.abs(cdf_img[g1] - cdf_ref)
-    #         mapping[g1] = np.argmin(diff)
+    Args:
+        img_array (np.ndarray): A 2D float array with grayscale
+        values in [0, 1].
+        mode (str): Histogram modification mode ('greedy' or 'non-greedy').
 
-    #     modified_img = mapping[disturbed_levels] / 255.0
-    #     return modified_img.astype(np.float32)
+    Returns:
+        np.ndarray: Equalized grayscale image.
+    """
+    unique_vals = np.unique(img_array)
+    L = len(unique_vals)
 
-    else:
-        raise NotImplementedError(f"Mode '{mode}' is not implemented.")
+    hist_ref = {float(v): 1.0 / L for v in unique_vals}
+
+    return perform_hist_modification(img_array, hist_ref=hist_ref, mode=mode)
+
+
+def perform_hist_matching(
+    img_array: np.ndarray, img_array_ref: np.ndarray, mode: str
+) -> np.ndarray:
+    """
+    Perform histogram matching between two grayscale images.
+
+    Args:
+        img_array (np.ndarray): A 2D float array with grayscale
+        values in [0, 1].
+        img_array_ref (np.ndarray): A reference grayscale image.
+        mode (str): Histogram modification mode ('greedy' or 'non-greedy').
+
+    Returns:
+        np.ndarray: Processed image with matched histogram.
+    """
+    hist_ref = calculate_hist_of_img(img_array_ref, return_normalized=True)
+    return perform_hist_modification(img_array, hist_ref=hist_ref, mode=mode)

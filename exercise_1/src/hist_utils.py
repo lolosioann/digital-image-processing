@@ -18,6 +18,8 @@ def calculate_hist_of_img(
         Dict[float, float]: Histogram as a mapping from pixel value
         to frequency.
     """
+    if img_array is None:
+        raise ValueError("Input image cannot be None")
     if img_array.ndim != 2:
         raise ValueError("Input image must be a 2D grayscale array")
     if np.any((img_array < 0) | (img_array > 1)):
@@ -45,6 +47,8 @@ def apply_hist_modification_transform(
     Returns:
         np.ndarray: Transformed image array.
     """
+    if img_array is None:
+        raise ValueError("Input image cannot be None")
     if img_array.ndim != 2:
         raise ValueError("Input image must be a 2D grayscale array")
     if np.any((img_array < 0) | (img_array > 1)):
@@ -53,7 +57,6 @@ def apply_hist_modification_transform(
     # Ensure all unique values are present in the transform
     unique_vals = np.unique(img_array)
     for val in unique_vals:
-        # if np.round(val, 4) not in modification_transform:
         if val not in modification_transform:
             raise ValueError(
                 f"Level {val} does not exist in the modification transform"
@@ -61,7 +64,9 @@ def apply_hist_modification_transform(
 
     # Apply transformation using vectorized function
     transform_func = np.vectorize(
-        lambda x: modification_transform[np.round(x, 4)], otypes=[np.float64]
+        # lambda x: modification_transform[np.round(x, 4)], otypes=[np.float64]
+        lambda x: modification_transform[x],
+        otypes=[np.float64],
     )
     return transform_func(img_array)
 
@@ -100,7 +105,6 @@ def show_histogram(
         title (str): Plot title.
     """
     hist_arr = dict_to_hist_array(hist_dict)
-
     # Normalize to probability density
     total = hist_arr.sum()
     if total > 0:
