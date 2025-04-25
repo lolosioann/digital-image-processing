@@ -15,7 +15,21 @@ def perform_hist_modification(
     Modifies the histogram of a grayscale image to match a given
     target histogram using the specified mode.
     Supported modes: 'greedy', 'non-greedy', 'post-disturbance'.
+
+    Args:
+        img_array (np.ndarray): The grayscale input image (2D array
+            with values in [0, 1]).
+        hist_ref (Dict[float, float]): The target histogram as a
+            dictionary with grayscale values as keys and their frequency
+            as values.
+        mode (str): The mode of histogram modification ('greedy',
+            'non-greedy', 'post-disturbance').
+
+    Returns:
+        np.ndarray: The modified image array with the target histogram.
     """
+
+    # Input validations
     if img_array.ndim != 2:
         raise ValueError("Input image must be 2D.")
     if not np.issubdtype(img_array.dtype, np.floating):
@@ -30,14 +44,20 @@ def perform_hist_modification(
         raise ValueError(
             "Keys in hist_ref must be floats in the range [0, 1]."
         )
+    if len(hist_ref) == 0:
+        raise ValueError(
+            "Target histogram must contain at least one gray level."
+        )
     if mode not in ["greedy", "non-greedy", "post-disturbance"]:
         raise NotImplementedError(
             "Supported modes: 'greedy', 'non-greedy', 'post-disturbance'."
         )
 
-    # --- POST DISTURBANCE ---
+    # post disturbance mode
     if mode == "post-disturbance":
         unique_vals = np.unique(img_array)
+
+        # we need at least 2 levels to calculate delta
         if len(unique_vals) < 2:
             raise ValueError(
                 "Image must contain at least 2 unique gray levels "
@@ -45,14 +65,14 @@ def perform_hist_modification(
             )
 
         unique_vals.sort()
-        delta = unique_vals[1] - unique_vals[0]  # assume uniform quantization
-
+        delta = unique_vals[1] - unique_vals[0]  # Assume uniform quantization
         noise = np.random.uniform(-delta / 2, delta / 2, size=img_array.shape)
         img_array = img_array + noise
         img_array = np.clip(img_array, 0.0, 1.0)
-        mode = "greedy"  # apply greedy after noise addition
 
-    # Histogram calculation
+        mode = "greedy"  # Apply greedy after noise addition
+
+    # Histogram calculation for input image
     input_hist = calculate_hist_of_img(img_array, return_normalized=False)
     N = sum(input_hist.values())
 
@@ -81,6 +101,7 @@ def perform_hist_modification(
             if i_val not in modification_transform:
                 modification_transform[i_val] = o_val
 
+    # --- NON-GREEDY MODE ---
     elif mode == "non-greedy":
         input_pointer = 0
         input_levels = sorted_input_levels
@@ -109,10 +130,6 @@ def perform_hist_modification(
                 nearest_g = min(sorted_output_levels, key=lambda g: abs(g - f))
                 modification_transform[f] = nearest_g
 
-    print(
-        "Number of unique output levels used:",
-        len(set(modification_transform.values())),
-    )
     return apply_hist_modification_transform(img_array, modification_transform)
 
 
@@ -122,18 +139,15 @@ def perform_hist_eq(img_array: np.ndarray, mode: str) -> np.ndarray:
     levels.
 
     Args:
-        img_array (np.ndarray): A 2D float array with grayscale
-        values in [0, 1].
-        mode (str): Histogram modification mode ('greedy' or 'non-greedy').
+        img_array (np.ndarray): A 2D float array with grayscale values in
+            [0, 1].
+        mode (str): Histogram modification mode ('greedy',
+            'non-greedy' or 'post-disturbance').
 
     Returns:
         np.ndarray: Equalized grayscale image.
     """
-    unique_vals = np.unique(img_array)
-    L = len(unique_vals)
-
-    hist_ref = {float(v): 1.0 / L for v in unique_vals}
-
+    hist_ref = {float(v / 256): 1.0 / 256 for v in range(256)}
     return perform_hist_modification(img_array, hist_ref=hist_ref, mode=mode)
 
 
@@ -144,10 +158,11 @@ def perform_hist_matching(
     Perform histogram matching between two grayscale images.
 
     Args:
-        img_array (np.ndarray): A 2D float array with grayscale
-        values in [0, 1].
+        img_array (np.ndarray): A 2D float array with grayscale values in
+            [0, 1].
         img_array_ref (np.ndarray): A reference grayscale image.
-        mode (str): Histogram modification mode ('greedy' or 'non-greedy').
+        mode (str): Histogram modification mode ('greedy',
+            'non-greedy' or 'post-disturbance').
 
     Returns:
         np.ndarray: Processed image with matched histogram.
