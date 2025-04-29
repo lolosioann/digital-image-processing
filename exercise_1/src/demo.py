@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import Dict
 
 import matplotlib.pyplot as plt
@@ -211,3 +213,28 @@ for mode in MODES:
         mode=mode,
         action="matching",
     )
+
+print("Do you want to keep the saved images? (Y/n)")
+save_images = input().strip().lower()
+
+if save_images not in ["y", "n", ""]:
+    print(save_images)
+    print("Invalid input. Images will be kept by default.")
+
+if save_images == "n":
+    # Change to the script's directory
+    script_dir = Path(__file__).resolve().parent
+    if Path.cwd() != script_dir:
+        os.chdir(script_dir)
+
+    # Remove all .png files
+    png_files = list(script_dir.glob("*.png"))
+    if not png_files:
+        print("No PNG files found to remove.")
+    else:
+        for file in png_files:
+            try:
+                file.unlink()
+            except Exception as e:
+                print(f"Failed to delete {file}: {e}")
+        print("Saved images removed.")
