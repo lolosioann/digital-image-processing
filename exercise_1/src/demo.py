@@ -137,6 +137,21 @@ input_img = Image.open(input_img_path).convert(
 )  # Open and convert to grayscale
 ref_img = Image.open(ref_img_path).convert("L")
 
+# save ref_hist
+ref_hist = calculate_hist_of_img(
+    np.array(ref_img, dtype=np.float64) / 255.0, return_normalized=True
+)  # Calculate histogram of reference image
+# Save the histogram of the reference image
+show_histogram(
+    ref_hist,
+    title="Reference Histogram",
+    save_path="ref_hist.png",
+)  # Save the histogram of the reference image
+
+#  save the images
+input_img.save("input_img.png")
+ref_img.save("ref_img.png")
+
 # Normalize images by dividing by 255 to scale pixel values to [0, 1]
 input_img = np.array(input_img, dtype=np.float64) / 255.0
 input_hist = calculate_hist_of_img(
@@ -163,9 +178,6 @@ for mode in MODES:
 
     # Convert equalized image to uint8 format for saving
     eq_img_uint8 = (eq_img * 255).astype(np.uint8)
-    Image.fromarray(eq_img_uint8).save(
-        f"equalized_{mode}.png"
-    )  # Save equalized image
 
     # Save the histogram of the equalized image
     show_histogram(
