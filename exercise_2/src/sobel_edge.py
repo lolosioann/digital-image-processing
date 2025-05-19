@@ -1,19 +1,19 @@
 import numpy as np
-from scipy.signal import convolve2d
+
+from fir_conv import fir_conv
 
 
 def sobel_edge(in_img_array: np.ndarray, thres: float) -> np.ndarray:
     """
-    Detect edges in a grayscale image using the Sobel operator.
+    Detects edges in a 2D grayscale image using the Sobel operator.
 
     Args:
         in_img_array (np.ndarray): 2D grayscale image with values in [0, 1].
-        thres (float): Threshold for gradient magnitude; must be a
-            positive value.
+        thres (float): Positive threshold for the gradient magnitude.
 
     Returns:
-        np.ndarray: 2D binary output image with values in {0, 1} indicating
-            edge locations.
+        np.ndarray: 2D binary image with values in {0, 1}
+        indicating edge locations.
     """
     if in_img_array is None or in_img_array.ndim != 2:
         raise ValueError("Input must be a 2D grayscale image.")
@@ -22,25 +22,19 @@ def sobel_edge(in_img_array: np.ndarray, thres: float) -> np.ndarray:
     if thres <= 0:
         raise ValueError("Threshold must be a positive number.")
 
-    # Sobel kernels for horizontal (x) and vertical (y) gradients
+    # Sobel kernels for horizontal and vertical edges
     Gx = np.array([[-1, 0, +1], [-2, 0, +2], [-1, 0, +1]], dtype=float)
 
     Gy = np.array([[+1, +2, +1], [0, 0, 0], [-1, -2, -1]], dtype=float)
 
-    # Compute gradient components via convolution
-    grad_x = convolve2d(
-        in_img_array, Gx, mode="same", boundary="fill", fillvalue=0
-    )
-    grad_y = convolve2d(
-        in_img_array, Gy, mode="same", boundary="fill", fillvalue=0
-    )
+    # Convolve input image with Sobel kernels
+    grad_x, _ = fir_conv(in_img_array, Gx)
+    grad_y, _ = fir_conv(in_img_array, Gy)
 
     # Compute gradient magnitude
-    grad_magnitude = np.hypot(
-        grad_x, grad_y
-    )  # more stable than sqrt(x^2 + y^2)
+    grad_magnitude = np.hypot(grad_x, grad_y)  # sqrt(x^2 + y^2)
 
-    # Apply threshold to obtain binary edge map
+    # Threshold gradient magnitude to get binary edge map
     out_img_array = (grad_magnitude >= thres).astype(int)
 
     return out_img_array
