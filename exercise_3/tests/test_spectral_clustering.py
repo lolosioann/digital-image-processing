@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from sklearn.datasets import make_circles
 from sklearn.metrics import pairwise_distances
 
@@ -87,7 +86,8 @@ def test_identity_matrix():
 
 # 5. Test on a Disconnected Graph (all zeros except the diagonal)
 def test_disconnected_graph():
-    # Create a disconnected graph with affinity = 0 except diagonal (self-loops)
+    # Create a disconnected graph with affinity = 0
+    #  except diagonal (self-loops)
     affinity_mat = np.identity(6)
 
     k = 6  # Each node should be its own cluster

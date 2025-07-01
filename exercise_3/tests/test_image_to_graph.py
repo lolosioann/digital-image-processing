@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from image_to_graph import (
     image_to_graph,  # Replace with the actual module name

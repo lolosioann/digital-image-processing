@@ -3,13 +3,13 @@ import numpy as np
 from scipy.io import loadmat
 
 from image_to_graph import image_to_graph
-from spectral_clustering import spectral_clustering
+from n_cuts import n_cuts
 
 
 def visualize_clustering(image, labels, k, title):
     """
     Visualize clustering result by reshaping labels
-    to image shape and assigning colors.
+      to image shape and assigning colors.
     """
     h, w, _ = image.shape
     segmented = np.zeros((h * w, 3))
@@ -51,16 +51,14 @@ def main():
         plt.axis("off")
 
         for idx, k in enumerate(range(2, 5), start=2):
-            print(f"Running spectral clustering on {name} with k={k}...")
-            labels = spectral_clustering(
-                affinity, k, random_state=random_state
-            )
+            print(f"Running n_cuts on {name} with k={k}...")
+            labels = n_cuts(affinity, k, random_state=random_state)
             h, w, _ = img.shape
             labels = labels.reshape((h * w,))
             plt.subplot(1, 4, idx)
             visualize_clustering(img, labels, k, title=f"k={k}")
 
-        plt.suptitle(f"Spectral Clustering Results for {name}")
+        plt.suptitle(f"N_Cuts Results for {name}")
         plt.tight_layout()
         plt.show()
 

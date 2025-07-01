@@ -3,13 +3,13 @@ import numpy as np
 from scipy.io import loadmat
 
 from image_to_graph import image_to_graph
-from spectral_clustering import spectral_clustering
+from n_cuts import n_cuts_recursive
 
 
 def visualize_clustering(image, labels, k, title):
     """
-    Visualize clustering result by reshaping labels
-    to image shape and assigning colors.
+    Visualize clustering result by reshaping labels to
+    image shape and assigning colors.
     """
     h, w, _ = image.shape
     segmented = np.zeros((h * w, 3))
@@ -45,22 +45,29 @@ def main():
         plt.figure(figsize=(16, 4))
 
         # Show original image
-        plt.subplot(1, 4, 1)
+        plt.subplot(1, 2, 1)
         plt.imshow(img)
         plt.title(f"{name}: Original")
         plt.axis("off")
 
-        for idx, k in enumerate(range(2, 5), start=2):
-            print(f"Running spectral clustering on {name} with k={k}...")
-            labels = spectral_clustering(
-                affinity, k, random_state=random_state
-            )
-            h, w, _ = img.shape
-            labels = labels.reshape((h * w,))
-            plt.subplot(1, 4, idx)
-            visualize_clustering(img, labels, k, title=f"k={k}")
+        # for idx, k in enumerate(range(2, 5), start=2):
+        #     print(f"Running n_cuts on {name} with k={k}...")
+        #     labels = n_cuts(
+        #         affinity, k, random_state=random_state
+        #     )
+        #     h, w, _ = img.shape
+        #     labels = labels.reshape((h * w,))
+        #     plt.subplot(1, 4, idx)
+        #     visualize_clustering(img, labels, k, title=f"k={k}")
 
-        plt.suptitle(f"Spectral Clustering Results for {name}")
+        print(f"Running recursive n_cuts on {name} with T1=0 and T2=0...")
+        labels = n_cuts_recursive(affinity, 0, 0, random_state=random_state)
+        h, w, _ = img.shape
+        labels = labels.reshape((h * w,))
+        plt.subplot(1, 2, 2)
+        visualize_clustering(img, labels, k=2, title=f"k={2}")
+
+        plt.suptitle(f"N_Cuts Results for {name}")
         plt.tight_layout()
         plt.show()
 

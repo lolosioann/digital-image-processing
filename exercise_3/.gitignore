@@ -1,6 +1,2 @@
-.venv
-__pycache__
-.vscode
-*.jpg
-*.jpeg
-src/fig/
+.venv/
+__pycache__/
