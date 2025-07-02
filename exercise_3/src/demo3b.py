@@ -50,18 +50,8 @@ def main():
         plt.title(f"{name}: Original")
         plt.axis("off")
 
-        # for idx, k in enumerate(range(2, 5), start=2):
-        #     print(f"Running n_cuts on {name} with k={k}...")
-        #     labels = n_cuts(
-        #         affinity, k, random_state=random_state
-        #     )
-        #     h, w, _ = img.shape
-        #     labels = labels.reshape((h * w,))
-        #     plt.subplot(1, 4, idx)
-        #     visualize_clustering(img, labels, k, title=f"k={k}")
-
-        print(f"Running recursive n_cuts on {name} with T1=0 and T2=0...")
-        labels = n_cuts_recursive(affinity, 0, 0, random_state=random_state)
+        print(f"Running recursive n_cuts on {name} with T1=999 and T2=1...")
+        labels = n_cuts_recursive(affinity, 999, 1, random_state=random_state)
         h, w, _ = img.shape
         labels = labels.reshape((h * w,))
         plt.subplot(1, 2, 2)

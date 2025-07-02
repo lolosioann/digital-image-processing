@@ -1,18 +1,18 @@
 import numpy as np
 from scipy.linalg import LinAlgError, eigh
 from scipy.sparse import csr_matrix, diags
-from scipy.sparse.linalg import eigsh  # symmetric ARPACK
+from scipy.sparse.linalg import eigsh
 from sklearn.cluster import KMeans
 
 
 def n_cuts(affinity_mat: np.ndarray, k: int, random_state=None) -> np.ndarray:
     """
-    Spectral clustering via the N‑cuts criterion.
+    Spectral clustering via the N-cuts criterion.
 
     Parameters
     ----------
     affinity_mat : np.ndarray
-        Square, symmetric affinity matrix W ∈ ℝ^{n×n}.
+        Square, symmetric affinity matrix W ∈ R^{nxn}.
     k : int
         Desired number of clusters.
     random_state : int | None
@@ -25,45 +25,39 @@ def n_cuts(affinity_mat: np.ndarray, k: int, random_state=None) -> np.ndarray:
     """
     n = affinity_mat.shape[0]
 
-    # ───── trivial / degenerate cases ─────
+    # trivial cases guard
     if k >= n:
         return np.arange(n)
     if k <= 0:
         raise ValueError("k must be a positive integer")
 
-    # ───── Laplacian & degree matrix ─────
+    # Laplacian
     degrees = affinity_mat.sum(axis=1)
     D = np.diag(degrees)
-    L = D - affinity_mat  # unnormalised Laplacian
+    L = D - affinity_mat
 
-    # guard: fully disconnected graph ⇒ all degrees zero
-    if np.allclose(degrees, 0):
-        return np.arange(n) % k
-
-    # ───── generalised eigen‑problem  Lx = λ D x ─────
-    dense_threshold = 200  # heuristic: switch to dense solver below this
+    # generalised eigen‑problem  Lx = lambda*D*x
+    dense_threshold = 200  # switch to dense solver below this
     try:
-        if n <= dense_threshold:  # small → dense
-            # eigh returns eigenvalues ASC; we keep the k smallest
+        if n <= dense_threshold:
             _, eigvecs = eigh(L, D, subset_by_index=(0, k - 1))
-        else:  # large → sparse
-            # ARPACK: symmetric solver with mass matrix M = D
+        else:
             L_sp = csr_matrix(L)
             D_sp = diags(degrees)
             _, eigvecs = eigsh(
                 L_sp, k=k, M=D_sp, which="SM"
-            )  # smallest magnitude
+            )  # keep k with smallest magnitude
     except (LinAlgError, Exception) as e:
         # fallback: dense generalised solver
         print(f"Eigenvalue computation failed, falling back: {e}")
         _, eigvecs = eigh(L, D, subset_by_index=(0, k - 1))
 
-    # ───── row normalisation ─────
+    # row normalisation for better clustering
     row_norms = np.linalg.norm(eigvecs, axis=1, keepdims=True)
     row_norms[row_norms == 0] = 1.0
-    U = eigvecs / row_norms  # n × k
+    U = eigvecs / row_norms
 
-    # ───── k‑means in spectral space ─────
+    # k‑means
     km = KMeans(
         n_clusters=k,
         n_init=10,
@@ -71,7 +65,7 @@ def n_cuts(affinity_mat: np.ndarray, k: int, random_state=None) -> np.ndarray:
     )
     labels = km.fit_predict(U)
 
-    # rare: k‑means collapsed → force unique labelling
+    # k‑means collapsed → force unique labelling
     if len(np.unique(labels)) < k:
         print("Warning: k-means collapsed, forcing unique labels.")
         labels = np.arange(n) % k
@@ -82,115 +76,115 @@ def n_cuts(affinity_mat: np.ndarray, k: int, random_state=None) -> np.ndarray:
 def calculate_n_cut_value(
     affinity_mat: np.ndarray, cluster_idx: np.ndarray
 ) -> float:
-    # Έλεγχος για το αν ο affinity πίνακας είναι τετράγωνος
+    """
+    Compute the Ncut value for a 2-way partition of a graph.
+
+    Parameters
+    ----------
+    affinity_mat : np.ndarray
+        Symmetric affinity matrix (n x n) of the graph.
+    cluster_idx : np.ndarray
+        Binary array of shape (n,), where each entry is
+        0 or 1 indicating
+        to which of the two clusters a node belongs.
+
+    Returns
+    -------
+    float
+        The Ncut value of the partition. Lower values
+        indicate better clustering.
+        Returns NaN if the cut is degenerate or invalid.
+    """
+
+    # Check validity of inputs
     if affinity_mat.shape[0] != affinity_mat.shape[1]:
         raise ValueError(
             f"Affinity matrix must be square. Got shape {affinity_mat.shape}."
         )
-
     if affinity_mat.shape[0] != cluster_idx.size:
         raise ValueError(
             "Affinity matrix size does not match the number of labels."
         )
-
     if affinity_mat.size == 0:
-        return 2  # Or another reasonable return value for an empty graph
+        return 2.0  # Maximum possible Ncut for an empty graph
 
-    # Υπολογισμός του assoc(A, V), assoc(B, V) και assoc(A, A), assoc(B, B)
+    # Create binary masks for the two clusters A and B
     A = cluster_idx == 1
     B = cluster_idx == 0
-    V = np.ones_like(cluster_idx, dtype=bool)
+    V = np.ones_like(cluster_idx, dtype=bool)  # full graph mask
 
-    assoc_AA = np.sum(
-        affinity_mat[A][:, A]
-    )  # Στοιχεία που ανήκουν στην ομάδα A
-    assoc_BB = np.sum(
-        affinity_mat[B][:, B]
-    )  # Στοιχεία που ανήκουν στην ομάδα B
-    assoc_AV = np.sum(affinity_mat[A][:, V])  # Στοιχεία της A προς το σύνολο V
-    assoc_BV = np.sum(affinity_mat[B][:, V])  # Στοιχεία της B προς το σύνολο V
+    # Compute associations:
+    # assoc(X, Y) = sum of edge weights between nodes in X and Y
+    assoc_AA = np.sum(affinity_mat[A][:, A])
+    assoc_BB = np.sum(affinity_mat[B][:, B])
+    assoc_AV = np.sum(affinity_mat[A][:, V])
+    assoc_BV = np.sum(affinity_mat[B][:, V])
 
-    # Προστασία από διαιρέσεις με το μηδέν
+    # to be safe
     if assoc_AV == 0 or assoc_BV == 0:
-        return np.nan  # Or another appropriate value
+        return np.nan
 
-    # Υπολογισμός του Nassoc(A, B)
+    # Compute Nassoc, then Ncut = 2 - Nassoc
     Nassoc = assoc_AA / assoc_AV + assoc_BB / assoc_BV
-
-    # Υπολογισμός του Ncut(A, B)
-    Ncut = 2.0 - Nassoc
-
-    return Ncut
-
-
-# def n_cuts_recursive(affinity_mat: np.ndarray,
-# T1: int, T2: float, random_state=None) -> np.ndarray:
-#     n = affinity_mat.shape[0]
-#     labels = -np.ones(n, dtype=int)
-#     next_label = 0
-
-#     stack = [np.arange(n)]
-
-#     while stack:
-#         indices = stack.pop()
-#         W = affinity_mat[np.ix_(indices, indices)]
-
-#         # Perform 2-way spectral clustering
-#         cluster = n_cuts(W, k=2, random_state=random_state)
-
-#         # Make sure it actually split the graph
-#         unique = np.unique(cluster)
-#         if len(unique) < 2:
-#             labels[indices] = next_label
-#             next_label += 1
-#             continue
-
-#         print(f"Splitting indices")
-#         group0 = indices[cluster == 0]
-#         group1 = indices[cluster == 1]
-
-#         # Compute Ncut value of this split
-#         ncut = calculate_n_cut_value(W, cluster)
-
-#         print(f"  → Group0 size: {len(group0)},
-# Group1 size: {len(group1)}, Ncut: {ncut:.4f}")
-#         # Check stopping condition
-#         if len(group0) < T1 or len(group1) < T1
-# or ncut > T2 or np.isnan(ncut):
-#             labels[indices] = next_label
-#             next_label += 1
-#         else:
-#             stack.append(group0)
-#             stack.append(group1)
-
-#     return labels
+    return 2.0 - Nassoc
 
 
 def n_cuts_recursive(
     affinity_mat: np.ndarray, T1: int, T2: float, random_state=None
 ) -> np.ndarray:
+    """
+    Recursively partition a graph using 2-way Normalized Cuts until
+    stopping criteria are met.
+
+    Parameters
+    ----------
+    affinity_mat : np.ndarray
+        Symmetric affinity matrix (n x n) representing the graph.
+    T1 : int
+        Minimum number of nodes required in a cluster to allow
+        further partitioning.
+    T2 : float
+        Maximum acceptable Ncut value for a split to be valid.
+    random_state : int, optional
+        Seed used for k-means clustering to ensure reproducibility.
+
+    Returns
+    -------
+    np.ndarray
+        An array of final cluster labels for each node in the graph.
+    """
+
     n = affinity_mat.shape[0]
-    labels = -np.ones(n, dtype=int)
-    next_label = [
-        0
-    ]  # Mutable label counter (so it updates across recursive calls)
+    labels = -np.ones(n, dtype=int)  # Final labels to be filled in
+    next_label = [0]  # Mutable label index counter
 
     def recursive_split(indices: np.ndarray):
+        """
+        Inner function to recursively split a subgraph defined by
+        the given node indices.
+        """
+
+        # Extract sub-affinity matrix corresponding to the current subset
         W = affinity_mat[np.ix_(indices, indices)]
 
+        # Perform 2-way normalized cut on the subgraph
         cluster = n_cuts(W, k=2, random_state=random_state)
 
-        unique = np.unique(cluster)
-        if len(unique) < 2:
+        # If the result is degenerate (i.e., one group only),
+        # assign all to the same label
+        if len(np.unique(cluster)) < 2:
             labels[indices] = next_label[0]
             next_label[0] += 1
             return
 
+        # Map subgraph clustering results back to full graph index space
         group0 = indices[cluster == 0]
         group1 = indices[cluster == 1]
 
+        # Compute the Ncut value of the proposed partition
         ncut = calculate_n_cut_value(W, cluster)
 
+        # Logging diagnostic info about this split
         print("Splitting indices")
         print(
             f"  → Group0 size: {len(group0)}, "
@@ -198,13 +192,17 @@ def n_cuts_recursive(
             f"Ncut: {ncut:.4f}"
         )
 
-        if len(group0) < T1 or len(group1) < T1 or ncut < T2 or np.isnan(ncut):
+        # Apply stopping criteria:
+        if len(group0) < T1 or len(group1) < T1 or ncut > T2:
+            # Stop recursion; assign current group to a unique label
             labels[indices] = next_label[0]
             next_label[0] += 1
-        else:
-            recursive_split(group0)
-            recursive_split(group1)
+            return
 
-    # Start recursion on all indices
+        # Recursively split each subgroup
+        recursive_split(group0)
+        recursive_split(group1)
+
+    # Start recursive splitting from the full set of nodes
     recursive_split(np.arange(n))
     return labels

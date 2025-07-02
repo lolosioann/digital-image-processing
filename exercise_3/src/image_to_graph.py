@@ -30,8 +30,6 @@ def image_to_graph(img_array: np.ndarray) -> np.ndarray:
     )  # Shape (num_pixels, num_pixels), squared Euclidean distance
 
     # Convert squared distances to affinity values
-    affinity_mat = np.exp(
-        -dist_squared
-    )  # A(i, j) = exp(-d(i, j)^2), for efficiency
+    affinity_mat = np.exp(-dist_squared)
 
     return affinity_mat

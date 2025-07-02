@@ -52,7 +52,7 @@ def main():
 
         print(f"Running recursive n_cuts on {name} until the end...")
         labels = n_cuts_recursive(
-            affinity, T1=5, T2=0.2, random_state=random_state
+            affinity, T1=5, T2=0.9, random_state=random_state
         )
         h, w, _ = img.shape
         labels = labels.reshape((h * w,))
