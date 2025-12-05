@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from typing import Dict
 
 import matplotlib.pyplot as plt
@@ -27,6 +26,22 @@ def demo_path(p: str) -> str:
     return data_path_str("src", pkg, *p.split("/")).__str__()
 
 
+def save_figure(fig, filename: str, folder: str = "outputs/part1"):
+    """
+    Save a matplotlib figure to a specified folder.
+
+    Args:
+        fig: Matplotlib figure object.
+        filename (str): Name of the file to save.
+        folder (str): Folder name to save the figure in.
+    """
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    fig_path = os.path.join(folder, filename)
+    fig.savefig(fig_path, bbox_inches="tight")
+    print(f"Saved figure to {fig_path}")
+
+
 def display_img_hist_grid(
     processed_img: np.ndarray,
     original_img: np.ndarray,
@@ -34,8 +49,8 @@ def display_img_hist_grid(
     original_hist: Dict[float, float],
     action: str,
     mode: str,
-    save_image: bool = True,
-    save_hist: bool = True,
+    save_image: bool = False,
+    save_hist: bool = False,
 ) -> None:
     """
     Displays and optionally saves the result of histogram
@@ -78,14 +93,14 @@ def display_img_hist_grid(
         title = (
             f"matched_hist_{mode}" if action == "matching" else f"equalized_hist_{mode}"
         )
-        show_histogram(processed_hist, title=title, save_path=f"{title}.png")
+        show_histogram(processed_hist, title=title, save_path=None)
 
     # Convert the processed and original histograms to arrays for plotting
     processed_hist_arr = dict_to_hist_array(processed_hist)
     original_hist_arr = dict_to_hist_array(original_hist)
 
     # Create a 2x2 grid layout for displaying images and histograms
-    _, axes = plt.subplots(2, 2, figsize=(12, 8))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
     # Plot the original image
     axes[0, 0].imshow(original_img, cmap="gray", vmin=0, vmax=1)
@@ -133,9 +148,15 @@ def display_img_hist_grid(
     axes[1, 1].set_xlabel("Gray Level")
     axes[1, 1].set_ylabel("Probability Density")
 
-    # Adjust layout and display
+    # Adjust layout, save and display
     plt.tight_layout()
+
+    # Save the combined 2x2 figure using the project's helper
+    grid_filename = f"{action}_{mode}_grid.png"
+    save_figure(fig, grid_filename, folder="outputs/part1")
+
     plt.show()
+    plt.close(fig)
 
 
 # Load grayscale images and normalize pixel values to [0, 1]
@@ -153,12 +174,8 @@ ref_hist = calculate_hist_of_img(
 show_histogram(
     ref_hist,
     title="Reference Histogram",
-    save_path="ref_hist.png",
+    save_path=None,
 )  # Save the histogram of the reference image
-
-#  save the images
-input_img.save("input_img.png")
-ref_img.save("ref_img.png")
 
 # Normalize images by dividing by 255 to scale pixel values to [0, 1]
 input_img = np.array(input_img, dtype=np.float64) / 255.0
@@ -187,7 +204,7 @@ for mode in MODES:
     show_histogram(
         eq_hist,
         title=f"Histogram Equalization ({mode})",
-        save_path=f"equalized_hist_{mode}.png",
+        save_path=None,
     )
 
     # Display images and histograms for the equalized image
@@ -215,28 +232,3 @@ for mode in MODES:
         mode=mode,
         action="matching",
     )
-
-print("Do you want to keep the saved images? (Y/n)")
-save_images = input().strip().lower()
-
-if save_images not in ["y", "n", ""]:
-    print(save_images)
-    print("Invalid input. Images will be kept by default.")
-
-if save_images == "n":
-    # Change to the script's directory
-    script_dir = Path(__file__).resolve().parent
-    if Path.cwd() != script_dir:
-        os.chdir(script_dir)
-
-    # Remove all .png files
-    png_files = list(script_dir.glob("*.png"))
-    if not png_files:
-        print("No PNG files found to remove.")
-    else:
-        for file in png_files:
-            try:
-                file.unlink()
-            except Exception as e:
-                print(f"Failed to delete {file}: {e}")
-        print("Saved images removed.")

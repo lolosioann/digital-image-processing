@@ -24,7 +24,6 @@ def generate_log_kernel(sigma: float) -> np.ndarray:
     x1, x2 = np.meshgrid(np.arange(-k, k + 1), np.arange(-k, k + 1))
 
     norm = (x1**2 + x2**2) / (2 * sigma**2)
-    print(norm)
     log_kernel = (-1 / (np.pi * sigma**4)) * (1 - norm) * np.exp(-norm)
 
     return log_kernel

@@ -28,7 +28,7 @@ def demo_path(p: str) -> str:
     return data_path_str("src", pkg, *p.split("/")).__str__()
 
 
-def save_figure(fig, filename: str, folder: str = "fig"):
+def save_figure(fig, filename: str, folder: str = "outputs/part2"):
     """
     Save a matplotlib figure to a specified folder.
 
@@ -60,7 +60,6 @@ def load_and_preprocess_image(path: str, downscale: float = 0.5) -> np.ndarray:
     resolved = demo_path(path)
     img = imread(resolved)
 
-    print(img.shape)
     # Convert RGBA to RGB if needed
     if img.ndim == 3 and img.shape[2] == 4:
         img = img[..., :3]  # Discard alpha channel
