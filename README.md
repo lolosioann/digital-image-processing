@@ -1,54 +1,64 @@
-# Digital Image Processing Exercises
+# Digital Image Processing – Course Exercises (AUTh 2024–2025)
 
-This project was developed as part of the course **"Digital Image Processing"**, part of the 2024–25 syllabus for the School of Electrical and Computer Engineering, Aristotle University of Thessaloniki.
+This repository contains my exercises for the course **Digital Image Processing** at the Department of Electrical and Computer Engineering, Aristotle University of Thessaloniki (AUTh), academic year 2024–2025.
 
-Each directory corresponds to an individual exercise and can be executed independently by running the respective `demo.py` files.
+All algorithms are implemented **from scratch**, with an emphasis on understanding the underlying behavior of each method. The repository includes image enhancement, edge and shape detection, and graph-based image segmentation techniques.
 
-[1) Histogram Equalization](#-exercise-1-histogram-equalization)
 
----
 
-# Exercise 1 - Histogram Equalization
+## Implemented Methods
 
-This module implements a set of functions to perform histogram equalization and histogram matching from scratch in Python. The methods supported Greedy, non-Greedy and post-Disturbance. 
+### Part 1 – Histogram Processing
 
-## 📸 Output Examples
+* Histogram Equalization and Matching:
 
-<table>
-<tr>
-<td align="center">
-  <img src="soon" width="300"/><br/>
-  <strong>soon</strong>
-</td>
-<td align="center">
-  <img src="soon" width="300"/><br/>
-  <strong>soon</strong>
-</td>
-</tr>
-</table>
+  * Greedy method
+  * Non-greedy method
+  * Post-disturbance method
 
----
 
-## 🧠 Features
+### Part 2 – Edge and Shape Detection
 
-- ✅ Histogram Equalization using Greedy, non-Greedy and Post-Disturbance algorithms
-- ✅ Histogram Equalization using Greedy, non-Greedy and Post-Disturbance algorithms
+* Edge Detection:
 
----
+  * Sobel Operator
+  * Laplacian of Gaussian (LoG)
+* Circle Detection:
 
-## 🚀 How It Works
+  * Hough Transform
 
-Soon
+### Part 3 – Image Segmentation
 
----
+* Spectral Clustering
+* Normalized Cuts (N-Cuts)
 
-## 📦 Requirements
 
-- Python 3.8+
-- NumPy
-- Matplotlib (for image loading, resizing, and saving)
+## Installation & Requirements
 
-Install dependencies with:
+You can easily replicate the environment using **uv**:
 
 ```bash
-pip install -r requirements.txt
+uv sync
+```
+
+## Running the Code
+
+Each demo can be executed as a module:
+
+```bash
+uv run -m src.part1.demo
+```
+
+Detailed execution instructions and experiment descriptions are provided in each part’s `docs/` directory.
+
+---
+
+## Running the Tests
+
+All tests are written using **pytest**. To run the tests for any part:
+
+```bash
+pytest ...
+```
+
+
