@@ -58,7 +58,7 @@ Detailed execution instructions and experiment descriptions are provided in each
 All tests are written using **pytest**. To run the tests for any part:
 
 ```bash
-pytest ...
+uv run pytest
 ```
 
 
