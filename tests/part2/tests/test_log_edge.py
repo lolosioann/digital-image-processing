@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from log_edge import log_edge
+from part2.log_edge import log_edge
 
 
 def test_output_shape_and_type():

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from hist_modif import perform_hist_modification
-from hist_utils import calculate_hist_of_img
+from part1.hist_modif import perform_hist_modification
+from part1.hist_utils import calculate_hist_of_img
 
 
 class TestHistogramModification:

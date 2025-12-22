@@ -1,8 +1,6 @@
 import numpy as np
 
-from image_to_graph import (
-    image_to_graph,  # Replace with the actual module name
-)
+from part3.image_to_graph import image_to_graph
 
 
 def test_affinity_matrix_shape():

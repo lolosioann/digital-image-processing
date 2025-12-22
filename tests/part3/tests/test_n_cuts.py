@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import make_circles
 from sklearn.metrics import pairwise_distances
 
-from n_cuts import n_cuts  # Adjust import according to your project structure
+from part3.n_cuts import n_cuts
 
 
 def test_basic_ncuts():

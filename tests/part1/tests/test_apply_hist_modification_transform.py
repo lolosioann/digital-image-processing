@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from hist_utils import apply_hist_modification_transform
+from part1.hist_utils import apply_hist_modification_transform
 
 
 class TestHistogramTransform:

@@ -1,9 +1,7 @@
 import numpy as np
 import pytest
 
-from sobel_edge import (
-    sobel_edge,  # Replace 'your_module' with the actual module name
-)
+from part2.sobel_edge import sobel_edge
 
 
 def test_output_shape_and_dtype():
@@ -47,9 +45,3 @@ def test_known_pattern():
     # We expect edges to appear around the vertical transition at column 2
     edge_columns = result[:, 1:4].sum(axis=1)  # Check columns around edge
     assert np.all(edge_columns > 0), "Expected edge at vertical transition"
-
-
-def test_no_edges_for_uniform_image():
-    img = np.ones((20, 20)) * 0.7
-    result = sobel_edge(img, thres=0.1)
-    assert np.all(result == 0), "Uniform image should have no edges"

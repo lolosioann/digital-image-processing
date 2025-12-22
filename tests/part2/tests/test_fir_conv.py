@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.part2.fir_conv import fir_conv
+from part2.fir_conv import fir_conv
 
 
 def test_identity_kernel():

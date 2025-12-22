@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from hist_utils import calculate_hist_of_img
+from part1.hist_utils import calculate_hist_of_img
 
 # -----------------------------------------------------------------------------
 # Basic Functionality Tests

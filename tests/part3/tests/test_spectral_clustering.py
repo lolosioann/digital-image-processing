@@ -2,10 +2,7 @@ import numpy as np
 from sklearn.datasets import make_circles
 from sklearn.metrics import pairwise_distances
 
-# Import the spectral_clustering function
-from spectral_clustering import (
-    spectral_clustering,  # Adjust import according to your project structure
-)
+from part3.spectral_clustering import spectral_clustering
 
 
 # 1. Basic Test on a Simple Synthetic Affinity Matrix
