@@ -1,4 +1,11 @@
 .venv/
 __pycache__/
 *.pyc
-outputs/
+outputs/*
+!outputs/part1/
+!outputs/part2/
+outputs/part1/*
+!outputs/part1/matching_post-disturbance_grid.png
+outputs/part2/*
+!outputs/part2/sobel_vs_log.png
+!outputs/part2/hough_circles_grid.png

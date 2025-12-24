@@ -16,6 +16,9 @@ All algorithms are implemented **from scratch**, with an emphasis on understandi
   * Non-greedy method
   * Post-disturbance method
 
+**Results:**
+
+![Post-disturbance histogram matching](outputs/part1/matching_post-disturbance_grid.png)
 
 ### Part 2 – Edge and Shape Detection
 
@@ -26,6 +29,12 @@ All algorithms are implemented **from scratch**, with an emphasis on understandi
 * Circle Detection:
 
   * Hough Transform
+
+**Results:**
+
+![Sobel vs LoG edge detection comparison](outputs/part2/sobel_vs_log.png)
+
+![Hough circle detection](outputs/part2/hough_circles_grid.png)
 
 ### Part 3 – Image Segmentation
 
